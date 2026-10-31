@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>index — your name</title>
+<meta name="description" content="Work by your name, listed by number, kind and year.">
+<meta name="theme-color" content="#f3f2ed">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%80%BB%3C/text%3E%3C/svg%3E">
+<!--
+  The Index — the archive / portfolio archetype.
+  One ruled list does all the work: number, title, kind, year. Hover or focus a
+  row and its image floats under the pointer; filters and sort live in the URL.
+  Swap the WORKS array for yours. Images: put a path in `img` (keep alt text).
+-->
+<style>
+  :root {
+    --ground: #f3f2ed;
+    --ink: #141414;
+    --quiet: #14141494;
+    --rule: #14141424;
+    --accent: #0000ee;
+    --face: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 13px/1.45 var(--face);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+  ::selection { background: var(--accent); color: var(--ground); }
+
+  .skip { position: absolute; left: 8px; top: -40px; }
+  .skip:focus { top: 8px; background: var(--ground); padding: 4px 6px; }
+
+  header {
+    position: sticky; top: 0; z-index: 2;
+    display: grid; grid-template-columns: 1fr auto; gap: 8px 16px;
+    padding: 12px 16px 10px;
+    background: var(--ground);
+    border-bottom: 1px solid var(--rule);
+  }
+  h1 { font: inherit; margin: 0; }
+  h1 span, .quiet { color: var(--quiet); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  nav button, th button {
+    font: inherit; color: var(--quiet); background: none; border: 0; padding: 4px 0;
+    min-height: 24px; cursor: pointer;
+  }
+  nav button[aria-pressed="true"], th button[aria-sort]:not([aria-sort="none"]) { color: var(--ink); }
+  nav button[aria-pressed="true"]::before { content: "● "; color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 400; padding: 0 16px; border-bottom: 1px solid var(--rule); }
+  th:first-child, td:first-child { width: 4.5em; font-family: var(--mono); font-size: 11px; }
+  td { padding: 0 16px; border-bottom: 1px solid var(--rule); height: 32px; }
+  td:last-child, th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr { cursor: default; }
+  tbody tr a { display: block; padding: 7px 0; }
+  .kind { color: var(--quiet); }
+  tbody tr:is(:hover, :focus-within) { background: var(--ink); color: var(--ground); }
+  tbody tr:is(:hover, :focus-within) .kind { color: inherit; }
+  tbody tr:is(:hover, :focus-within) a:focus-visible { outline-color: var(--ground); }
+  @media (max-width: 560px) { .kind { display: none; } }
+
+  .preview {
+    position: fixed; left: 0; top: 0; z-index: 3;
+    width: min(32vw, 360px); aspect-ratio: 4 / 3;
+    pointer-events: none; opacity: 0;
+    transform: translate3d(var(--x, 50vw), var(--y, 50vh), 0) translate(16px, -50%);
+    transition: opacity 120ms linear;
+  }
+  .preview.on { opacity: 1; }
+  .preview img, .preview .swatch { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview .swatch {
+    display: grid; place-items: end start; padding: 10px;
+    background: var(--accent); color: var(--ground); font-size: 28px; line-height: 1;
+  }
+  @media (hover: none) { .preview { display: none; } }
+
+  footer { padding: 24px 16px 40px; color: var(--quiet); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .count { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { .preview { transition: none; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#works">skip to the list</a>
+<header>
+  <h1>your name <span>— designer, somewhere</span></h1>
+  <a href="#about">about</a>
+  <nav aria-label="filter by kind" id="filters"></nav>
+</header>
+
+<main id="works">
+  <table>
+    <caption class="quiet" style="text-align:left;padding:10px 16px 6px">
+      <span class="count" id="count"></span>
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col"><button data-sort="n">no.</button></th>
+        <th scope="col"><button data-sort="title">title</button></th>
+        <th scope="col" class="kind"><button data-sort="kind">kind</button></th>
+        <th scope="col"><button data-sort="year">year</button></th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</main>
+
+<div class="preview" id="preview" aria-hidden="true"></div>
+
+<footer id="about">
+  <p>Write two plain sentences about yourself here.<br>Mail: <a href="mailto:you@example.com">you@example.com</a></p>
+  <p>Set in Helvetica Neue and the system mono. Updated <time id="updated"></time>.</p>
+</footer>
+
+<script>
+  const WORKS = [
+    { n: 1, title: "A typeface for a river", kind: "type", year: 2026, href: "#", img: "", alt: "" },
+    { n: 2, title: "Bookshop that only opens when it rains", kind: "web", year: 2025, href: "#", img: "", alt: "" },
+    { n: 3, title: "Forty postcards, one per tram stop", kind: "print", year: 2025, href: "#", img: "", alt: "" },
+    { n: 4, title: "Archive of borrowed chairs", kind: "web", year: 2024, href: "#", img: "", alt: "" },
+    { n: 5, title: "Signage for a very small museum", kind: "print", year: 2023, href: "#", img: "", alt: "" },
+    { n: 6, title: "Variable sans, nine weights of fog", kind: "type", year: 2022, href: "#", img: "", alt: "" },
+  ];
+
+  const rows = document.getElementById("rows");
+  const filters = document.getElementById("filters");
+  const preview = document.getElementById("preview");
+  const sortButtons = [...document.querySelectorAll("th button")];
+  const kinds = ["all", ...new Set(WORKS.map((w) => w.kind))];
+  const params = new URLSearchParams(location.search);
+  let state = { kind: params.get("kind") || "all", sort: params.get("sort") || "n", dir: params.get("dir") || "asc" };
+
+  for (const k of kinds) {
+    const b = document.createElement("button");
+    b.textContent = k;
+    b.addEventListener("click", () => set({ kind: k }));
+    filters.append(b);
+  }
+  for (const b of sortButtons) b.addEventListener("click", () => {
+    const key = b.dataset.sort;
+    set({ sort: key, dir: state.sort === key && state.dir === "asc" ? "desc" : "asc" });
+  });
+
+  function set(next) {
+    state = { ...state, ...next };
+    const q = new URLSearchParams();
+    if (state.kind !== "all") q.set("kind", state.kind);
+    if (state.sort !== "n") q.set("sort", state.sort);
+    if (state.dir !== "asc") q.set("dir", state.dir);
+    history.replaceState(null, "", q.toString() ? "?" + q : location.pathname);
+    render();
+  }
+
+  function render() {
+    const list = WORKS.filter((w) => state.kind === "all" || w.kind === state.kind)
+      .sort((a, b) => {
+        const x = a[state.sort], y = b[state.sort];
+        const c = typeof x === "number" ? x - y : String(x).localeCompare(String(y));
+        return state.dir === "asc" ? c : -c;
+      });
+    rows.replaceChildren(...list.map((w) => {
+      const tr = document.createElement("tr");
+      tr.dataset.n = w.n;
+      tr.innerHTML = `<td>${String(w.n).padStart(3, "0")}</td><td><a></a></td><td class="kind"></td><td>${w.year}</td>`;
+      const a = tr.querySelector("a");
+      a.href = w.href; a.textContent = w.title;
+      tr.querySelector(".kind").textContent = w.kind;
+      return tr;
+    }));
+    for (const b of filters.children) b.setAttribute("aria-pressed", String(b.textContent === state.kind));
+    for (const b of sortButtons) b.setAttribute("aria-sort", b.dataset.sort === state.sort ? (state.dir === "asc" ? "ascending" : "descending") : "none");
+    document.getElementById("count").textContent = `${list.length} of ${WORKS.length} works`;
+  }
+
+  function show(n) {
+    const w = WORKS.find((x) => x.n === Number(n));
+    if (!w) return;
+    if (w.img) {
+      const img = new Image();
+      img.src = w.img; img.alt = w.alt || "";
+      preview.replaceChildren(img);
+    } else {
+      const s = document.createElement("div");
+      s.className = "swatch"; s.textContent = w.title;
+      preview.replaceChildren(s);
+    }
+    preview.classList.add("on");
+  }
+  const hide = () => preview.classList.remove("on");
+
+  rows.addEventListener("pointerover", (e) => { const tr = e.target.closest("tr"); if (tr) show(tr.dataset.n); });
+  rows.addEventListener("pointerleave", hide);
+  rows.addEventListener("focusin", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const r = tr.getBoundingClientRect();
+    preview.style.setProperty("--x", `${Math.min(r.left + 200, innerWidth * 0.6)}px`);
+    preview.style.setProperty("--y", `${r.top + r.height / 2}px`);
+    show(tr.dataset.n);
+  });
+  rows.addEventListener("focusout", hide);
+  addEventListener("pointermove", (e) => {
+    preview.style.setProperty("--x", `${Math.min(e.clientX, innerWidth - preview.offsetWidth - 24)}px`);
+    preview.style.setProperty("--y", `${e.clientY}px`);
+  }, { passive: true });
+
+  document.getElementById("updated").textContent =
+    new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(new Date(document.lastModified));
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>atlas — your name</title>
+<meta name="description" content="A map of the places on the web I keep going back to.">
+<meta name="theme-color" content="#f0fff0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%8C%96%3C/text%3E%3C/svg%3E">
+<!--
+  The Atlas — the links-page / garden / directory archetype.
+  Links laid out as places on a plane bigger than the screen, joined by dotted
+  paths. Scroll or drag to wander; "a random door" takes you somewhere. Tab
+  order follows the list, so keyboards and screen readers get a plain list.
+  Edit PLACES: x/y in px on the plane, `near` names the places it connects to.
+-->
+<style>
+  :root {
+    --ground: #f0fff0;
+    --ink: #111111;
+    --quiet: #1111118c;
+    --path: #11111152;
+    --link: #0000ee;
+    --face: "Times New Roman", Times, serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.3 var(--face); touch-action: manipulation; }
+  a { color: var(--link); }
+  :focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+  ::selection { background: #ffff00; }
+  header {
+    position: fixed; z-index: 2; inset: 0 0 auto 0; padding: 10px 16px;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    background: linear-gradient(var(--ground) 70%, #f0fff000);
+    pointer-events: none;
+  }
+  header > * { pointer-events: auto; }
+  h1 { font: italic 16px/1.3 var(--face); margin: 0; }
+  button { font: 13px/1 var(--mono); color: var(--ink); background: var(--ground); border: 1px solid var(--ink); padding: 6px 10px; min-height: 28px; cursor: pointer; }
+  .viewport { position: fixed; inset: 0; overflow: auto; cursor: grab; overscroll-behavior: contain; }
+  .viewport.panning { cursor: grabbing; user-select: none; }
+  .plane { position: relative; width: 2400px; height: 1700px; }
+  .plane svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .plane path { fill: none; stroke: var(--path); stroke-width: 1; stroke-dasharray: 2 4; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  .place { position: absolute; transform: translate(-50%, -50%); text-align: center; max-width: 16ch; }
+  .place a { display: inline-block; padding: 4px 2px; }
+  .place::before { content: "●"; display: block; font-size: 9px; color: var(--ink); margin-bottom: 2px; }
+  .place small { display: block; font: 11px/1.3 var(--mono); color: var(--quiet); }
+  .place.here::before { content: "you are here"; font: 11px/1 var(--mono); color: var(--ink); }
+  .place.lit a { background: #ffff00; }
+  @media (prefers-reduced-motion: reduce) { .viewport { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>places I keep going back to</h1>
+  <button id="door" type="button">a random door</button>
+</header>
+<div class="viewport" id="viewport" tabindex="-1">
+  <div class="plane" id="plane">
+    <svg aria-hidden="true" id="paths"></svg>
+    <ul id="places" aria-label="places"></ul>
+  </div>
+</div>
+<script>
+  const PLACES = [
+    { id: "home", x: 1200, y: 850, label: "this site", note: "start here", href: "#", here: true, near: ["reading", "tools", "friends"] },
+    { id: "reading", x: 820, y: 560, label: "things to read", note: "essays, slowly", href: "https://example.com/", near: ["archive"] },
+    { id: "archive", x: 480, y: 380, label: "an archive of fonts", note: "1970s specimens", href: "https://example.org/" },
+    { id: "tools", x: 1640, y: 600, label: "small tools", note: "single-purpose", href: "https://example.net/", near: ["synth"] },
+    { id: "synth", x: 1960, y: 420, label: "a synth in a tab", note: "sound on click", href: "https://example.com/synth" },
+    { id: "friends", x: 1260, y: 1220, label: "friends’ websites", note: "a webring, sort of", href: "https://example.org/ring", near: ["garden", "radio"] },
+    { id: "garden", x: 860, y: 1360, label: "someone’s garden", note: "updated by season", href: "https://example.net/garden" },
+    { id: "radio", x: 1720, y: 1340, label: "a tiny radio", note: "always on", href: "https://example.com/radio" },
+  ];
+  const plane = document.getElementById("plane");
+  const list = document.getElementById("places");
+  const paths = document.getElementById("paths");
+  const vp = document.getElementById("viewport");
+  const byId = Object.fromEntries(PLACES.map((p) => [p.id, p]));
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+
+  for (const p of PLACES) {
+    const li = document.createElement("li");
+    li.className = "place" + (p.here ? " here" : "");
+    li.style.left = p.x + "px"; li.style.top = p.y + "px";
+    li.id = "place-" + p.id;
+    const a = document.createElement("a");
+    a.href = p.href; a.textContent = p.label;
+    const small = document.createElement("small");
+    small.textContent = p.note;
+    li.append(a, small);
+    list.append(li);
+    for (const q of (p.near || []).map((id) => byId[id]).filter(Boolean)) {
+      const mx = (p.x + q.x) / 2 + (q.y - p.y) * 0.18, my = (p.y + q.y) / 2 - (q.x - p.x) * 0.18;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `M${p.x} ${p.y} Q${mx} ${my} ${q.x} ${q.y}`);
+      paths.append(path);
+    }
+  }
+
+  const goTo = (p, smooth) => vp.scrollTo({
+    left: p.x - vp.clientWidth / 2, top: p.y - vp.clientHeight / 2,
+    behavior: smooth && !reduce.matches ? "smooth" : "auto",
+  });
+  goTo(PLACES.find((p) => p.here), false);
+
+  document.getElementById("door").addEventListener("click", () => {
+    const options = PLACES.filter((p) => !p.here);
+    const p = options[Math.floor(Math.random() * options.length)];
+    document.querySelectorAll(".place.lit").forEach((el) => el.classList.remove("lit"));
+    const li = document.getElementById("place-" + p.id);
+    li.classList.add("lit");
+    goTo(p, true);
+    li.querySelector("a").focus({ preventScroll: true });
+  });
+
+  // Drag the ground to pan (links still click normally).
+  vp.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.target.closest("a, button")) return;
+    const sx = e.clientX + vp.scrollLeft, sy = e.clientY + vp.scrollTop;
+    vp.classList.add("panning");
+    const move = (ev) => vp.scrollTo(sx - ev.clientX, sy - ev.clientY);
+    const up = () => { vp.classList.remove("panning"); removeEventListener("pointermove", move); };
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", up, { once: true });
+  });
+</script>
+</body>
+</html>

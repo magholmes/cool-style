@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>notebook — your name</title>
+<meta name="description" content="A notebook kept in public: dated entries, notes in the margin, links out.">
+<meta name="theme-color" content="#fffef8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8E%3C/text%3E%3C/svg%3E">
+<link rel="alternate" type="application/rss+xml" title="notebook — your name" href="feed.xml">
+<!--
+  The Notebook — the text-first archetype (essay, diary, research log, zine).
+  A browser serif, a 34em measure, honest link colours, notes in the margin on
+  wide screens and inline on phones, dates on everything, a colophon at the end.
+  No JavaScript except the "updated" stamp.
+-->
+<style>
+  :root {
+    --ground: #fffef8;
+    --ink: #1a1a1a;
+    --quiet: #1a1a1a8f;
+    --rule: #1a1a1a26;
+    --link: #0000ee;
+    --visited: #551a8b;
+    --face: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 18px/1.55 var(--face);
+    font-kerning: normal; hanging-punctuation: first;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+  a { color: var(--link); text-underline-offset: 0.16em; text-decoration-thickness: 1px; }
+  a:visited { color: var(--visited); }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+  ::selection { background: #ffef5c; }
+
+  .page {
+    display: grid; gap: 0 32px;
+    grid-template-columns: [full-start] 16px [text-start] minmax(0, 34em) [text-end] 1fr [full-end];
+    padding: 40px 0 80px;
+  }
+  .page > * { grid-column: text; }
+  @media (min-width: 1100px) {
+    .page { grid-template-columns: [full-start] 1fr [text-start] 34em [text-end note-start] 15em [note-end] 1fr [full-end]; }
+  }
+  header { margin-bottom: 2.5em; }
+  h1 { font-size: 1em; font-weight: 400; margin: 0; }
+  header p { margin: 0; color: var(--quiet); }
+  article { margin: 0 0 3em; }
+  h2 { font-size: 1.35em; font-weight: 400; line-height: 1.2; margin: 0 0 0.4em; text-wrap: balance; scroll-margin-top: 24px; }
+  time, .meta { font: 12px/1.4 var(--mono); color: var(--quiet); font-variant-numeric: tabular-nums; }
+  p { margin: 0 0 1em; text-wrap: pretty; }
+  blockquote { margin: 1.2em 0; padding-left: 1em; border-left: 1px solid var(--rule); color: var(--quiet); }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 2.5em 0; }
+
+  /* Sidenotes: inline on narrow screens, in the margin on wide ones. */
+  .note { font-size: 14px; line-height: 1.45; color: var(--quiet); margin: 0 0 1em; padding-left: 1em; border-left: 1px solid var(--rule); }
+  .note::before { content: attr(data-n) " "; font-family: var(--mono); font-size: 11px; }
+  sup a { text-decoration: none; font-family: var(--mono); font-size: 11px; }
+  @media (min-width: 1100px) {
+    article { display: contents; }
+    article > * { grid-column: text; }
+    /* A note placed right after its paragraph auto-places into the same row. */
+    .note { grid-column: note; align-self: start; border: 0; padding: 0.3em 0 0; }
+  }
+  .index { list-style: none; padding: 0; margin: 0 0 3em; }
+  .index li { display: grid; grid-template-columns: 7.5em 1fr; gap: 0 12px; padding: 3px 0; border-bottom: 1px dotted var(--rule); }
+  footer { color: var(--quiet); font-size: 14px; }
+  footer p { margin: 0 0 0.6em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>your name’s notebook</h1>
+    <p>Things I’m learning, kept in public. Newest first. <a href="feed.xml">RSS</a>.</p>
+  </header>
+
+  <ol class="index" aria-label="entries">
+    <li><time datetime="2026-10-30">2026-10-30</time><a href="#on-small-websites">On small websites</a></li>
+    <li><time datetime="2026-10-12">2026-10-12</time><a href="#a-list-of-doors">A list of doors</a></li>
+  </ol>
+
+  <article>
+    <h2 id="on-small-websites">On small websites</h2>
+    <p class="meta"><time datetime="2026-10-30">30 Oct 2026</time> · 3 min</p>
+    <p>A website can be a room you keep, not a billboard you rent. Write the first sentence like you would to a friend who asked what you’ve been doing.<sup><a href="#n1" id="r1">1</a></sup></p>
+    <aside class="note" id="n1" data-n="1">Margin notes live here on wide screens and drop inline on phones. <a href="#r1">↩</a></aside>
+    <p>Link out generously. The web is a web: <a href="https://example.com/">the thing that taught me this</a>, and <a href="https://example.org/">the person who said it better</a>.</p>
+    <blockquote>Quote someone, and say who.</blockquote>
+  </article>
+
+  <article>
+    <h2 id="a-list-of-doors">A list of doors</h2>
+    <p class="meta"><time datetime="2026-10-12">12 Oct 2026</time> · 1 min</p>
+    <p>Short entries are fine. A list is an entry. A photograph with a caption is an entry.</p>
+  </article>
+
+  <hr>
+  <footer>
+    <p>Kept by your name in a place you live. Write to <a href="mailto:you@example.com">you@example.com</a>.</p>
+    <p>Colophon: set in the reader’s own serif (Iowan, Palatino or Georgia) and the system mono. Hand-coded, no tracking, about 9&nbsp;KB. Last updated <time id="updated"></time>.</p>
+  </footer>
+</div>
+<script>
+  document.getElementById("updated").textContent =
+    new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(new Date(document.lastModified));
+</script>
+</body>
+</html>

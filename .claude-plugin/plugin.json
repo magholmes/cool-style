@@ -1,0 +1,21 @@
+{
+  "name": "cool-style",
+  "version": "1.0.0",
+  "description": "What makes a website cool, distilled from hundreds of independent websites: one idea carried all the way, type with a reason, one ink, the page as a place, one live thing, a human voice. Laws, archetypes, a moves library with code, starter sites, a catalogue and an audit that runs in CI.",
+  "author": {
+    "name": "Magnus Holmes"
+  },
+  "homepage": "https://github.com/magholmes/cool-style",
+  "repository": "https://github.com/magholmes/cool-style",
+  "license": "MIT",
+  "keywords": [
+    "design",
+    "web-design",
+    "style-guide",
+    "handmade-web",
+    "small-web",
+    "net-art",
+    "portfolio",
+    "skill"
+  ]
+}

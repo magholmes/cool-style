@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Name, who draws maps and makes websites</title>
+<meta name="description" content="Your Name draws maps, makes websites for small museums and keeps a notebook. Write to hello@example.com.">
+<meta name="theme-color" content="#f2efe6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%81%82%3C/text%3E%3C/svg%3E">
+<!--
+  The Sentence — the site-as-one-sentence archetype (studio, bio, manifesto, small org).
+  The description IS the navigation: every noun phrase that leads somewhere is a
+  link, and pictures sit in the line where words would. Hover or focus a link
+  with data-img and its picture opens beside the pointer. Write your own sentence.
+-->
+<style>
+  :root {
+    --ground: #f2efe6;
+    --ink: #161513;
+    --link: #2b2bff;
+    --quiet: #16151394;
+    --face: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100svh;
+    background: var(--ground); color: var(--ink);
+    font: clamp(30px, 5.2vw, 76px)/1.12 var(--face); letter-spacing: -0.01em;
+    padding: 4vw 4vw 14vh;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible { outline: 3px solid var(--link); outline-offset: 4px; }
+  ::selection { background: var(--link); color: var(--ground); }
+  h1 { font: inherit; margin: 0; max-width: 22em; text-wrap: pretty; }
+  a { color: var(--link); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 100% 0.06em no-repeat; }
+  a:hover, a:focus-visible { background: var(--link); color: var(--ground); }
+  .chip {
+    display: inline-block; height: 0.78em; aspect-ratio: 4 / 3; vertical-align: -0.06em;
+    margin: 0 0.12em; border-radius: 0.08em; background: var(--link);
+  }
+  .chip.round { aspect-ratio: 1; border-radius: 50%; background: #ff5b2e; }
+  .chip.tall { aspect-ratio: 3 / 4; background: #2f9e62; }
+  .meta { position: fixed; left: 4vw; right: 4vw; bottom: 3vh; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    font: 12px/1.4 var(--mono); color: var(--quiet); }
+  .peek {
+    position: fixed; left: 0; top: 0; width: min(36vw, 420px); aspect-ratio: 4 / 3; pointer-events: none; opacity: 0;
+    background: var(--link); color: var(--ground); font: 13px/1.3 var(--mono); padding: 10px;
+    display: flex; align-items: flex-end;
+    transform: translate3d(var(--x, 50vw), var(--y, 50vh), 0) translate(18px, 18px);
+    transition: opacity 120ms linear;
+  }
+  .peek img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .peek.on { opacity: 1; }
+  @media (hover: none) { .peek { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .peek { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>
+    Your Name draws <a href="#maps" data-peek="maps of places that no longer exist">maps</a><span class="chip" aria-hidden="true"></span>,
+    makes <a href="#websites" data-peek="websites for four very small museums">websites for small museums</a><span class="chip round" aria-hidden="true"></span>
+    and keeps <a href="#notebook" data-peek="a notebook, updated on Sundays">a notebook</a><span class="chip tall" aria-hidden="true"></span>
+    in a city by a river. Lately: <a href="#now" data-peek="tide tables, hand-drawn">tide tables</a>.
+    Write to <a href="mailto:hello@example.com">hello@example.com</a>.
+  </h1>
+</main>
+<p class="meta"><span>est. 2019 · <time id="updated"></time></span><span>this sentence is the whole website</span></p>
+<div class="peek" id="peek" aria-hidden="true"></div>
+<script>
+  // Each link with data-peek shows a preview (put an image path in data-img to show a picture).
+  const peek = document.getElementById("peek");
+  const show = (a) => {
+    peek.replaceChildren();
+    if (a.dataset.img) {
+      const img = new Image(); img.src = a.dataset.img; img.alt = "";
+      peek.append(img);
+    }
+    peek.append(document.createTextNode(a.dataset.peek));
+    peek.classList.add("on");
+  };
+  const hide = () => peek.classList.remove("on");
+  for (const a of document.querySelectorAll("a[data-peek]")) {
+    a.addEventListener("pointerenter", () => show(a));
+    a.addEventListener("pointerleave", hide);
+    a.addEventListener("focus", () => {
+      const r = a.getBoundingClientRect();
+      peek.style.setProperty("--x", `${Math.min(r.left, innerWidth - peek.offsetWidth - 24)}px`);
+      peek.style.setProperty("--y", `${Math.min(r.bottom, innerHeight - peek.offsetHeight - 24)}px`);
+      show(a);
+    });
+    a.addEventListener("blur", hide);
+  }
+  addEventListener("pointermove", (e) => {
+    peek.style.setProperty("--x", `${Math.min(e.clientX, innerWidth - peek.offsetWidth - 40)}px`);
+    peek.style.setProperty("--y", `${Math.min(e.clientY, innerHeight - peek.offsetHeight - 40)}px`);
+  }, { passive: true });
+  document.getElementById("updated").textContent =
+    "updated " + new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" }).format(new Date(document.lastModified)).toLowerCase();
+</script>
+</body>
+</html>

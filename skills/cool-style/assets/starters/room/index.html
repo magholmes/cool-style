@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the room — your name</title>
+<meta name="description" content="A desk of things you can pick up and move. They stay where you leave them.">
+<meta name="theme-color" content="#e9e4d8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%BF%3C/text%3E%3C/svg%3E">
+<!--
+  The Room — the "website is a place" archetype.
+  One screen, objects lying on a surface at slight angles. Pick them up (mouse,
+  touch, or Tab + arrow keys); the page remembers where you left them. "tidy"
+  puts them back in a row. Replace the <figure>s with your own things.
+-->
+<style>
+  :root {
+    --ground: #e9e4d8;
+    --ink: #1d1b16;
+    --quiet: #1d1b169c;
+    --paper: #fbfaf5;
+    --accent: #d2361e;
+    --face: Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden;
+    background-color: var(--ground);
+    background-image: radial-gradient(#1d1b1626 1px, transparent 1.2px);
+    background-size: 18px 18px;
+    color: var(--ink); font: 15px/1.4 var(--face);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  ::selection { background: var(--accent); color: var(--paper); }
+  header {
+    position: fixed; inset: 12px 16px auto 16px; z-index: 1000;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    font: 11px/1.4 var(--mono); color: var(--quiet); pointer-events: none;
+  }
+  header > * { pointer-events: auto; }
+  h1 { font: inherit; margin: 0; color: var(--ink); }
+  button {
+    font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--ink); padding: 4px 10px; min-height: 28px; cursor: pointer;
+  }
+  .desk { position: absolute; inset: 0; }
+  .thing {
+    position: absolute; left: 0; top: 0; margin: 0;
+    transform: translate3d(var(--x), var(--y), 0) rotate(var(--r));
+    cursor: grab; touch-action: none; user-select: none;
+    box-shadow: 0 1px 1px #0000001f, 0 6px 14px -8px #00000059;
+  }
+  .thing.held { cursor: grabbing; box-shadow: 0 2px 2px #00000024, 0 22px 30px -14px #00000066; }
+  .thing.settling { transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .note { background: var(--paper); padding: 14px 16px 16px; width: 220px; }
+  .note p { margin: 0; }
+  .note small { display: block; margin-top: 10px; font: 10px/1.3 var(--mono); color: var(--quiet); }
+  .card { width: 180px; aspect-ratio: 3 / 4; background: var(--accent); color: var(--paper); padding: 12px; display: flex; align-items: flex-end; font-size: 26px; line-height: 1; }
+  .stamp { width: 96px; aspect-ratio: 1; border-radius: 50%; background: var(--ink); color: var(--ground); display: grid; place-items: center; text-align: center; font: 10px/1.2 var(--mono); padding: 8px; }
+  .ticket { width: 260px; background: var(--paper); border-left: 2px dashed var(--quiet); padding: 10px 14px; font: 12px/1.5 var(--mono); }
+  figcaption { font: 10px/1.3 var(--mono); color: var(--quiet); margin-top: 6px; }
+  .hint { position: fixed; left: 16px; bottom: 12px; font: 11px/1.4 var(--mono); color: var(--quiet); margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .thing.settling { transition: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>your name’s desk</h1>
+  <span>updated <time id="updated"></time></span>
+  <button id="tidy" type="button">tidy</button>
+</header>
+
+<main class="desk" id="desk" aria-label="Things on the desk. Tab to one, then move it with the arrow keys.">
+  <figure class="thing note" tabindex="0" data-id="hello" aria-label="Note: hello">
+    <p>Hello. This is a room, not a brochure. Move anything; it will stay where you put it.</p>
+    <small>note · 01</small>
+  </figure>
+  <figure class="thing card" tabindex="0" data-id="work" aria-label="Card: work">
+    <a href="#work" style="color:inherit">work →</a>
+  </figure>
+  <figure class="thing stamp" tabindex="0" data-id="stamp" aria-label="Stamp">made by hand<br>2026</figure>
+  <figure class="thing ticket" tabindex="0" data-id="ticket" aria-label="Ticket: contact">
+    ADMIT ONE · mail <a href="mailto:you@example.com" style="color:inherit">you@example.com</a>
+  </figure>
+  <figure class="thing note" tabindex="0" data-id="now" aria-label="Note: now">
+    <p>Now: reading about tide tables, drawing chairs, answering letters slowly.</p>
+    <small>note · 02</small>
+  </figure>
+</main>
+
+<p class="hint" id="hint" aria-live="polite">drag things around · tab + arrows work too</p>
+
+<script>
+  const desk = document.getElementById("desk");
+  const things = [...desk.querySelectorAll(".thing")];
+  const KEY = "room:v1";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { saved = {}; }
+  const save = () => {
+    const out = {};
+    for (const t of things) out[t.dataset.id] = { x: t._x, y: t._y, r: t._r, z: t.style.zIndex };
+    try { localStorage.setItem(KEY, JSON.stringify(out)); } catch {}
+  };
+  const place = (t, x, y, r = t._r) => {
+    const maxX = innerWidth - 40, maxY = innerHeight - 40;
+    t._x = Math.max(-t.offsetWidth + 40, Math.min(maxX, x));
+    t._y = Math.max(32, Math.min(maxY, y));
+    t._r = r;
+    t.style.setProperty("--x", `${t._x}px`);
+    t.style.setProperty("--y", `${t._y}px`);
+    t.style.setProperty("--r", `${t._r}deg`);
+  };
+  let highest = things.length;
+  const lift = (t) => { t.style.zIndex = String(++highest); };
+
+  // On load and resize, pull anything that would sit off this screen fully back on it.
+  const fitIn = (t) => place(t,
+    Math.min(t._x, Math.max(8, innerWidth - t.offsetWidth - 8)),
+    Math.min(t._y, Math.max(40, innerHeight - t.offsetHeight - 8)));
+
+  // First visit: scatter at random. Every visit after: exactly where they were left.
+  things.forEach((t, i) => {
+    const s = saved[t.dataset.id];
+    if (s) { place(t, s.x, s.y, s.r); t.style.zIndex = s.z || i + 1; }
+    else place(t, 16 + Math.random() * Math.max(0, innerWidth - t.offsetWidth - 32),
+                  56 + Math.random() * Math.max(0, innerHeight - t.offsetHeight - 96), Math.random() * 10 - 5);
+    fitIn(t);
+  });
+  addEventListener("resize", () => things.forEach(fitIn));
+
+  for (const t of things) {
+    t.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("a")) return;
+      const dx = e.clientX - t._x, dy = e.clientY - t._y;
+      t.setPointerCapture(e.pointerId);
+      t.classList.remove("settling");
+      t.classList.add("held");
+      lift(t);
+      const move = (ev) => place(t, ev.clientX - dx, ev.clientY - dy);
+      const drop = () => {
+        t.classList.remove("held");
+        t.removeEventListener("pointermove", move);
+        save();
+      };
+      t.addEventListener("pointermove", move);
+      t.addEventListener("pointerup", drop, { once: true });
+      t.addEventListener("pointercancel", drop, { once: true });
+    });
+    t.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 40 : 8;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      lift(t);
+      place(t, t._x + d[0], t._y + d[1]);
+      save();
+    });
+  }
+
+  document.getElementById("tidy").addEventListener("click", () => {
+    let x = 24, y = 64, rowH = 0;
+    for (const t of things) {
+      if (x + t.offsetWidth > innerWidth - 24) { x = 24; y += rowH + 24; rowH = 0; }
+      t.classList.toggle("settling", !reduce.matches);
+      place(t, x, y, 0);
+      x += t.offsetWidth + 24; rowH = Math.max(rowH, t.offsetHeight);
+    }
+    save();
+    document.getElementById("hint").textContent = "tidied. it won’t last.";
+  });
+
+  document.getElementById("updated").textContent =
+    new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(document.lastModified));
+</script>
+</body>
+</html>

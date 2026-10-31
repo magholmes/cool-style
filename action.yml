@@ -1,0 +1,31 @@
+name: cool-check
+description: Audit a website against cool-style — generic-template tells, missing craft, and the accessibility guardrails cool sites tend to skip.
+author: Magnus Holmes
+branding:
+  icon: eye
+  color: blue
+inputs:
+  path:
+    description: Folder to audit (HTML, CSS, JS, JSX/TSX, Vue, Svelte, Astro).
+    default: "."
+  max-kb:
+    description: Budget for first-party HTML+CSS+JS in KB (images excluded). The studied sites' median is ~250 KB.
+    default: "600"
+  strict:
+    description: Treat warnings as errors.
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - shell: bash
+      env:
+        COOL_PATH: ${{ inputs.path }}
+        COOL_MAX_KB: ${{ inputs.max-kb }}
+        COOL_STRICT: ${{ inputs.strict }}
+      run: |
+        args=("$COOL_PATH" "--max-kb" "$COOL_MAX_KB" "--github")
+        if [ "$COOL_STRICT" = "true" ]; then args+=("--strict"); fi
+        node "${{ github.action_path }}/skills/cool-style/scripts/audit.mjs" "${args[@]}"

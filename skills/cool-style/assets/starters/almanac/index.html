@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>almanac — your name</title>
+<meta name="description" content="A year as a grid of days. Some days have something written on them.">
+<meta name="theme-color" content="#f6f5f0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%97%90%3C/text%3E%3C/svg%3E">
+<!--
+  The Almanac — the website-as-calendar / clock archetype.
+  The page knows what day it is. The year is 365 squares; past days are filled,
+  today is marked, days with an entry carry a dot. Arrow keys walk the days.
+  Put your entries in ENTRIES ("YYYY-MM-DD": "text").
+-->
+<style>
+  :root {
+    --ground: #f6f5f0;
+    --ink: #161616;
+    --quiet: #16161685;
+    --faint: #1616161c;
+    --accent: #ff4d00;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 12px/1.5 var(--mono); font-variant-numeric: tabular-nums;
+    padding: 16px; touch-action: manipulation;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  ::selection { background: var(--accent); color: var(--ground); }
+  header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-bottom: 24px; }
+  h1 { font: inherit; margin: 0; }
+  .quiet { color: var(--quiet); }
+  .bar { height: 2px; background: var(--faint); margin: 6px 0 0; width: min(360px, 100%); }
+  .bar span { display: block; height: 100%; background: var(--ink); width: var(--p, 0%); }
+
+  .year { display: grid; gap: 6px; }
+  .month { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; gap: 8px; }
+  .days { display: grid; grid-template-columns: repeat(31, minmax(0, 1fr)); gap: 3px; max-width: 760px; }
+  .day {
+    position: relative; aspect-ratio: 1; min-width: 0; padding: 0;
+    border: 1px solid var(--faint); background: transparent; color: inherit; cursor: pointer;
+  }
+  .day.past { background: var(--ink); border-color: var(--ink); }
+  .day.today { background: var(--accent); border-color: var(--accent); }
+  .day.has::after {
+    content: ""; position: absolute; inset: 30%; border-radius: 50%; background: var(--accent);
+  }
+  .day.past.has::after { background: var(--ground); }
+  .day[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+  @media (max-width: 520px) { .days { gap: 2px; } .month { grid-template-columns: 2.4em 1fr; } }
+
+  .reading { margin-top: 24px; max-width: 46ch; min-height: 5em; font-size: 14px; line-height: 1.5; }
+  .reading time { display: block; color: var(--quiet); font-size: 12px; }
+  footer { margin-top: 32px; color: var(--quiet); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>your name’s almanac</h1>
+    <p class="quiet" style="margin:0" id="summary"></p>
+    <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+  </div>
+  <p style="margin:0"><time id="clock"></time></p>
+</header>
+
+<main>
+  <div class="year" id="year" role="grid" aria-label="days of the year"></div>
+  <div class="reading" id="reading" aria-live="polite"></div>
+</main>
+
+<footer>Kept one square at a time. Arrow keys walk the days; Enter reads one.</footer>
+
+<script>
+  const ENTRIES = {
+    "2026-01-01": "Started writing one sentence a day.",
+    "2026-03-20": "Equinox. Light and dark the same length; so was my patience.",
+    "2026-06-21": "Longest day. Walked until it ended.",
+    "2026-10-30": "Rebuilt the website by hand.",
+  };
+  const now = new Date();
+  const Y = now.getFullYear();
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const todayIso = iso(now);
+  const long = new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const monthName = new Intl.DateTimeFormat(undefined, { month: "short" });
+  const year = document.getElementById("year");
+  const reading = document.getElementById("reading");
+  const cells = [];
+
+  for (let m = 0; m < 12; m++) {
+    const row = document.createElement("div");
+    row.className = "month"; row.setAttribute("role", "row");
+    const label = document.createElement("span");
+    label.className = "quiet"; label.textContent = monthName.format(new Date(Y, m, 1)).toLowerCase();
+    label.setAttribute("role", "rowheader");
+    const days = document.createElement("div");
+    days.className = "days";
+    const count = new Date(Y, m + 1, 0).getDate();
+    for (let d = 1; d <= count; d++) {
+      const date = new Date(Y, m, d);
+      const key = iso(date);
+      const b = document.createElement("button");
+      b.className = "day"; b.type = "button"; b.tabIndex = -1;
+      b.setAttribute("role", "gridcell");
+      b.dataset.key = key;
+      b.setAttribute("aria-label", long.format(date) + (ENTRIES[key] ? ", has an entry" : ""));
+      if (key < todayIso) b.classList.add("past");
+      if (key === todayIso) { b.classList.add("today"); b.setAttribute("aria-current", "date"); }
+      if (ENTRIES[key]) b.classList.add("has");
+      b.addEventListener("click", () => read(b));
+      b.addEventListener("pointerenter", () => read(b, true));
+      days.append(b); cells.push(b);
+    }
+    row.append(label, days);
+    year.append(row);
+  }
+
+  function read(b, peek = false) {
+    const key = b.dataset.key;
+    const [y, m, d] = key.split("-").map(Number);
+    reading.replaceChildren();
+    const t = document.createElement("time");
+    t.dateTime = key; t.textContent = long.format(new Date(y, m - 1, d));
+    reading.append(t, document.createTextNode(ENTRIES[key] || (key > todayIso ? "Not yet." : "Nothing written.")));
+    if (!peek) for (const c of cells) c.setAttribute("aria-pressed", String(c === b));
+  }
+
+  // Roving tabindex: one tab stop for the whole year, arrows move a day / a week.
+  let current = cells.find((c) => c.dataset.key === todayIso) || cells[0];
+  current.tabIndex = 0;
+  year.addEventListener("keydown", (e) => {
+    const i = cells.indexOf(document.activeElement);
+    if (i < 0) return;
+    const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 7, ArrowUp: -7, Home: -i, End: cells.length - 1 - i }[e.key];
+    if (step === undefined) return;
+    e.preventDefault();
+    const next = cells[Math.max(0, Math.min(cells.length - 1, i + step))];
+    current.tabIndex = -1; next.tabIndex = 0; current = next;
+    next.focus(); read(next);
+  });
+
+  const start = new Date(Y, 0, 1), end = new Date(Y + 1, 0, 1);
+  const dayOfYear = Math.floor((now - start) / 864e5) + 1;
+  const total = Math.round((end - start) / 864e5);
+  const pct = ((now - start) / (end - start)) * 100;
+  document.getElementById("summary").textContent = `day ${dayOfYear} of ${total} · ${pct.toFixed(1)}% of ${Y} gone`;
+  document.getElementById("bar").style.setProperty("--p", pct + "%");
+  read(current);
+
+  const clock = document.getElementById("clock");
+  const fmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+  const tick = () => { const n = new Date(); clock.dateTime = n.toISOString(); clock.textContent = fmt.format(n); };
+  tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

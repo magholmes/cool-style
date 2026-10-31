@@ -1,0 +1,39 @@
+name: cool-check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  starters:
+    name: starters pass their own audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          path: skills/cool-style/assets/starters
+          strict: "true"
+  scripts:
+    name: scripts run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node skills/cool-style/scripts/examples.mjs ix-hover-reveal --top 3
+      - run: node skills/cool-style/scripts/examples.mjs --tags > /dev/null
+      - name: the audit catches a generic page
+        run: |
+          mkdir -p /tmp/generic
+          cat > /tmp/generic/index.html <<'HTML'
+          <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+          <title>Vite + React</title><style>body{font-family:Inter,sans-serif}.card{transition:all .3s}
+          .hero{background:linear-gradient(135deg,#6366f1,#8b5cf6)}</style></head>
+          <body><div class="hero"><h1>Elevate your workflow</h1><p>Lorem ipsum dolor sit amet</p>
+          <img src="a.png"><button>Get started</button></div></body></html>
+          HTML
+          if node skills/cool-style/scripts/audit.mjs /tmp/generic; then
+            echo "audit should have failed on the generic page"; exit 1
+          fi

@@ -1,0 +1,23 @@
+{
+  "name": "cool-style",
+  "owner": {
+    "name": "Magnus Holmes"
+  },
+  "metadata": {
+    "description": "The cool-style skill: what makes a website feel original rather than templated."
+  },
+  "plugins": [
+    {
+      "name": "cool-style",
+      "source": "./",
+      "description": "What makes a website cool: laws, archetypes, a moves library with code, starters, a catalogue of examples and a CI audit.",
+      "version": "1.0.0",
+      "category": "design",
+      "tags": [
+        "design",
+        "web-design",
+        "handmade-web"
+      ]
+    }
+  ]
+}

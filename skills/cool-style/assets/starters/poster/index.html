@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NAME — studio</title>
+<meta name="description" content="A studio for one thing. Four corners, one word, a colour that follows the hour.">
+<meta name="theme-color" content="#1a1aff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231a1aff'/%3E%3C/svg%3E">
+<!--
+  The Poster — the one-screen identity archetype (studio, label, event, release).
+  One word as large as the screen allows, information pinned to the four
+  corners, a saturated field. The field shifts through six colours across the
+  day, so the site looks different at breakfast and at midnight.
+-->
+<style>
+  :root {
+    --field: #1a1aff;
+    --ink: #ffffff;
+    --face: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; min-height: 100svh; overflow: hidden;
+    background: var(--field); color: var(--ink);
+    font: 13px/1.35 var(--face);
+    transition: background-color 1200ms linear, color 1200ms linear;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a { color: inherit; text-underline-offset: 0.18em; }
+  :focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+  ::selection { background: var(--ink); color: var(--field); }
+  .word {
+    position: absolute; inset: 0; margin: 0;
+    display: grid; place-items: center;
+    font-size: 23vw; line-height: 0.8; letter-spacing: -0.045em; font-weight: 500;
+    white-space: nowrap; user-select: none;
+  }
+  .corner { position: absolute; margin: 0; max-width: 40ch; padding: 14px 16px; }
+  .tl { top: 0; left: 0; } .tr { top: 0; right: 0; text-align: right; }
+  .bl { bottom: 0; left: 0; } .br { bottom: 0; right: 0; text-align: right; }
+  .mono { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li a { display: inline-block; padding: 3px 0; min-height: 24px; }
+  @media (prefers-reduced-motion: reduce) { body { transition: none; } }
+</style>
+</head>
+<body>
+<h1 class="word">NAME</h1>
+<p class="corner tl">NAME is a studio for typefaces and the signs they end up on. Based in a city, working anywhere.</p>
+<nav class="corner tr" aria-label="links">
+  <ul>
+    <li><a href="#work">work</a></li>
+    <li><a href="#fonts">fonts</a></li>
+    <li><a href="mailto:hello@example.com">hello@example.com</a></li>
+  </ul>
+</nav>
+<p class="corner bl mono" aria-live="off"><span id="place">here</span> · <time id="clock"></time></p>
+<p class="corner br mono">your <span id="phase"></span> · since 2019</p>
+
+<script>
+  // Six fields across the day. Pick colours you'd defend; keep the ink legible on each.
+  const DAY = [
+    { from: 0,  field: "#0b0b2e", ink: "#e8e6ff", name: "night" },
+    { from: 5,  field: "#ff8a65", ink: "#1b0b06", name: "dawn" },
+    { from: 9,  field: "#1a1aff", ink: "#ffffff", name: "morning" },
+    { from: 13, field: "#ffe600", ink: "#141414", name: "afternoon" },
+    { from: 18, field: "#ff3b1f", ink: "#140503", name: "evening" },
+    { from: 21, field: "#2a1060", ink: "#f2e9ff", name: "late" },
+  ];
+  // The corner clock shows the studio's time; the field follows the visitor's own hour.
+  const STUDIO_TZ = "Europe/Berlin";
+  const clock = document.getElementById("clock");
+  const fmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23", timeZone: STUDIO_TZ });
+
+  // Fit the word to the screen: as wide as 92vw allows, never taller than 62vh.
+  const word = document.querySelector(".word");
+  function fit() {
+    const probe = document.createElement("span");
+    probe.textContent = word.textContent;
+    probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;font-size:100px";
+    word.append(probe);
+    const w = probe.getBoundingClientRect().width;
+    probe.remove();
+    word.style.fontSize = Math.min((innerWidth * 0.92 / w) * 100, innerHeight * 0.62 / 0.8) + "px";
+  }
+  fit();
+  addEventListener("resize", fit);
+  document.fonts?.ready.then(fit);
+  function tick() {
+    const now = new Date();
+    const slot = [...DAY].reverse().find((d) => now.getHours() >= d.from);
+    const root = document.documentElement.style;
+    root.setProperty("--field", slot.field);
+    root.setProperty("--ink", slot.ink);
+    document.querySelector('meta[name="theme-color"]').content = slot.field;
+    document.getElementById("phase").textContent = slot.name;
+    clock.dateTime = now.toISOString();
+    clock.textContent = fmt.format(now);
+  }
+  document.getElementById("place").textContent = STUDIO_TZ.split("/").pop().replace(/_/g, " ").toLowerCase();
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
